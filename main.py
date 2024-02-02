@@ -6,17 +6,20 @@ def add_entry(entry_type, content, file_path="notes.txt"):
     timestamp = datetime.now().strftime("%Y-%m-%d")
     entry = f"{prefix} {timestamp}: {content}\n"
     
+    # Write the entry to the file
     with open(file_path, "a") as file:
         file.write(entry)
     
     print(f"Entry added boss man: {entry.strip()}")
+    
+    # Organize entries in the file after adding a new one
+    write_entries(file_path)
 
-def display_entries(file_path="notes.txt", filter_type=None):
-    # Check if the file exists to avoid FileNotFoundError
+def write_entries(file_path="notes.txt"):
     if not os.path.exists(file_path):
-        print("No entries found.")
+        print("No entries to organize.")
         return
-
+    
     to_dos, notes = [], []
     with open(file_path, "r") as file:
         for line in file:
@@ -24,15 +27,28 @@ def display_entries(file_path="notes.txt", filter_type=None):
                 to_dos.append(line)
             elif "[Note]" in line:
                 notes.append(line)
+    
+    # Rewrite the file with organized entries
+    with open(file_path, "w") as file:
+        if to_dos:
+            file.write("TO DO:\n-----------------\n")
+            file.writelines(to_dos)
+        if notes:
+            file.write("\nNOTES:\n-----------------\n")
+            file.writelines(notes)
 
-    if filter_type == "todo":
-        print("TO DO:\n-----------------")
-        print("".join(to_dos))
-    else:
-        print("TO DO:\n-----------------")
-        print("".join(to_dos))
-        print("NOTES:\n-----------------")
-        print("".join(notes))
+def display_entries(file_path="notes.txt", filter_type=None):
+    if not os.path.exists(file_path):
+        print("No entries found.")
+        return
+    
+    # Simply print the file contents since they're already organized
+    with open(file_path, "r") as file:
+        if filter_type == "todo":
+            print("TO DO:\n-----------------")
+            print(file.read())
+        else:
+            print(file.read())
 
 def main():
     print("Note and To-Do List Manager")
