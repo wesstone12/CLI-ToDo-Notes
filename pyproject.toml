@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "cli note taker"
+version = "0.1.0"
+description = ""
+authors = ["Wes Stone <wesstone@vt.edu>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+argparse = "^1.4.0"
+datetime = "^5.4"
+keyboard = "^0.13.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
