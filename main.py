@@ -1,11 +1,13 @@
 from datetime import datetime
 import os
+import summarizer
 
 def check_file(file_path="notes.txt"):
     if not os.path.exists(file_path):
         with open(file_path, "w") as file:
             file.write("NOTES:\n")
             file.write("TO DO:\n")
+            file.write("FINISHED TO DOs:\n")
         print(f"File '{file_path}' created.")
     elif os.path.exists(file_path):
         # Check if the file is empty
@@ -15,6 +17,8 @@ def check_file(file_path="notes.txt"):
                 with open(file_path, "w") as file:
                     file.write("NOTES:\n")
                     file.write("TO DO:\n")
+                    file.write("FINISHED TO DOs:\n")
+                    
                 print(f"File '{file_path}' found but empty. Resetting file.")
     
     else:
@@ -24,37 +28,35 @@ def add_entry(entry_type, content, file_path="notes.txt"):
     timestamp = datetime.now().strftime("%Y-%m-%d")
     new_entry = f"{prefix} {timestamp}: {content}\n"
     
-    # Initialize containers for existing entries
-    notes, to_dos = [], []
-    section = None
+    # Read the current file content and append the new entry in the correct section
+    notes, to_dos, finished_todos = [], [], []
+    current_section = None
 
-    # Load and categorize existing entries
-    with open(file_path, "r+") as file:
+    with open(file_path, "r") as file:
         for line in file:
             if "NOTES:" in line:
-                section = 'notes'
+                current_section = notes
             elif "TO DO:" in line:
-                section = 'to_dos'
-            elif line.strip():  # Ignore empty lines
-                if section == 'notes':
-                    notes.append(line)
-                elif section == 'to_dos':
-                    to_dos.append(line)
+                current_section = to_dos
+            elif "FINISHED TO DOs:" in line:
+                current_section = finished_todos
+            else:
+                current_section.append(line)
 
     # Append the new entry to the appropriate list
     if prefix == "[Note]":
         notes.append(new_entry)
-    else:
-        to_dos.append(new_entry)
+    elif prefix == "[ToDo]":
+        to_dos.append(new_entry)  # Ensure this is appending to to_dos, not finished_todos
 
-    # Rewrite the file with the updated lists
+    # Rewrite the file with the updated content
     with open(file_path, "w") as file:
-        if notes:
-            file.write("NOTES:\n")
-            file.writelines(notes)
-        if to_dos:
-            file.write("\nTO DO:\n")
-            file.writelines(to_dos)
+        file.write("NOTES:\n")
+        file.writelines(notes)
+        file.write("TO DO:\n")
+        file.writelines(to_dos)
+        file.write("FINISHED TO DOs:\n")
+        file.writelines(finished_todos)
 
     print(f"Entry added boss man: {new_entry.strip()}")
 
@@ -70,85 +72,115 @@ def display_entries(file_path="notes.txt", filter_type=None):
 
     display_formatted_entries(entries, filter_type)
 def check_off_todo(file_path="notes.txt"):
-    # Load existing to-dos
-    to_dos = []
+    # Load existing entries
+    entries = {"notes": [], "to_dos": [], "finished_todos": []}
+    section = None
     with open(file_path, "r") as file:
-        section = None
         for line in file:
-            if "TO DO:" in line:
-                section = 'to_dos'
-            elif line.strip() and section == 'to_dos':
-                # Include only non-empty lines that are in the to-dos section
-                to_dos.append(line)
-
-    # Check if there are to-dos to display
-    if not to_dos:
-        print("No to-dos to display.")
+            if "NOTES:" in line:
+                section = "notes"
+            elif "TO DO:" in line:
+                section = "to_dos"
+            elif "FINISHED TO DOs:" in line:
+                section = "finished_todos"
+            elif line.strip():
+                entries[section].append(line)
+    
+    # Display current to-dos with indexes
+    if entries["to_dos"]:
+        print("TO DOs:")
+        for index, todo in enumerate(entries["to_dos"], start=1):
+            print(f"{index}. {todo.strip()}")
+    else:
+        print("No TO DOs to display.")
         return
 
-    # Display to-dos with an index
-    print("TO DOs:")
-    for index, todo in enumerate(to_dos, start=1):
-        print(f"{index}. {todo.strip()}")
-
-    # Prompt user to select a to-do to check off
     try:
         choice = int(input("Enter the number of the to-do to check off: ")) - 1
-        if 0 <= choice < len(to_dos):
-            # Remove the selected to-do
-            check_off = to_dos[choice]
-            del to_dos[choice]
-            # Update the file
-            update_todo_file(to_dos, file_path)
-            print(f"[{check_off[19:].strip()}] checked off successfully. Good job boss man")
-        else:
-            print("Invalid selection. Please enter a valid index number.")
+        if 0 <= choice < len(entries["to_dos"]):
+            finished_todo = entries["to_dos"].pop(choice)
+            entries["finished_todos"].append(finished_todo)
+            # Ensure this part correctly rewrites the sections without mixing them.
+            with open(file_path, "w") as file:
+                if entries["notes"]:
+                    file.write("NOTES:\n" + "".join(entries["notes"]))
+                file.write("\nTO DO:\n" + "".join(entries["to_dos"]))
+                file.write("\nFINISHED TO DOs:\n" + "".join(entries["finished_todos"]))
     except ValueError:
         print("Please enter a number.")
 
-def update_todo_file(to_dos, file_path):
-    # Read the entire file and update the to-dos section
-    with open(file_path, "r") as file:
-        lines = file.readlines()
+def update_todo_file(file_path, to_dos=None, finished_todo=None):
+    notes, current_todos, finished_todos = [], [], []
+    section = None
 
+    # Read the file and categorize entries
+    with open(file_path, "r") as file:
+        for line in file:
+            if "NOTES:" in line:
+                section = 'notes'
+            elif "TO DO:" in line:
+                section = 'to_dos'
+            elif "FINISHED TO DOs:" in line:
+                section = 'finished_todos'
+            elif line.strip():  # Check if line is not just whitespace
+                if section == 'notes':
+                    notes.append(line)
+                elif section == 'to_dos' and to_dos is not None:
+                    current_todos.append(line)
+                elif section == 'finished_todos':
+                    finished_todos.append(line)
+
+    # Update the lists based on operations
+    if finished_todo:
+        # Add the finished to-do item to the finished_todos list
+        finished_todos.append(finished_todo)
+
+    # Rewrite the file with updated sections, ensuring there are newlines between sections
     with open(file_path, "w") as file:
-        in_todo_section = False
-        for line in lines:
-            if "TO DO:" in line:
-                in_todo_section = True
-                file.write(line)  # Write the "TO DO:" section marker
-                # Write the updated to-dos
-                for todo in to_dos:
-                    file.write(todo)
-            elif "NOTES:" in line:
-                in_todo_section = False
-                file.write("\n")  # Ensure separation between sections
-            if not in_todo_section or line.strip() == "":
-                file.write(line)
+        if notes:
+            file.write("NOTES:\n" + "".join(notes) + "\n")
+        if to_dos is not None:
+            file.write("TO DO:\n" + "".join(to_dos) + "\n")
+        file.write("FINISHED TO DOs:\n" + "".join(finished_todos))
+
+    print("File updated successfully.")
 
 
 def display_formatted_entries(entries, filter_type=None):
-    is_printing = False  # Flag to control printing based on the filter_type
+    sections = {'notes': [], 'to_dos': [], 'finished_todos': []}
+    current_section = None
 
     for entry in entries:
-        if 'TO DO:' in entry:
-            is_printing = filter_type in [None, "todo"]  # Start printing if filtering for todos or not filtering
-            if is_printing:
-                print("TO DO:")
-                print("-" * 10)
-            continue
+        if 'NOTES:' in entry:
+            current_section = 'notes'
+        elif 'TO DO:' in entry:
+            current_section = 'to_dos'
+        elif 'FINISHED TO DOs:' in entry:
+            current_section = 'finished_todos'
+        elif entry.strip():  # Add non-empty lines to the current section
+            sections[current_section].append(entry.strip())
 
-        elif 'NOTES:' in entry:
-            is_printing = filter_type in [None, "note"]  # Start printing if filtering for notes or not filtering
-            if is_printing:
-                print("\nNOTES:")
-                print("-" * 10)
-            continue
+    # Display sections based on filter_type or if they have content
+    if not filter_type or filter_type == "note":
+        if sections['notes']:
+            print("NOTES:\n----------")
+            for note in sections['notes']:
+                print(f"• {note}")
+            print()  # Add a newline for spacing if the section was displayed
 
-        if is_printing and ':' in entry:  # Check if it's an entry line and the flag is set to print
-            # Extract and print the date and content without the prefix
-            date_content = entry.split(':', 1)[1].strip()
-            print(f'• {date_content}')
+    if not filter_type or filter_type == "todo":
+        if sections['to_dos']:
+            print("TO DO:\n----------")
+            for todo in sections['to_dos']:
+                print(f"• {todo}")
+            print()  # Add a newline for spacing if the section was displayed
+
+    if not filter_type:  # Finished to-dos are always shown without a specific filter
+        if sections['finished_todos']:
+            print("FINISHED TO DOs:\n----------")
+            for finished_todo in sections['finished_todos']:
+                print(f"• {finished_todo}")
+
 
 
 
@@ -180,5 +212,13 @@ def main():
             add_entry(command, content)
         elif command == '-x':
             check_off_todo(file_path="notes.txt")
+        else:
+            print("Type '-e' or '-exit' to quit. Type '-c' or '-clear' to clear the screen.")
+            print("Use 'note'/'-n' or 'todo'/'-t' followed by your text. No need for quotes around your text.")
+            print("Type '-s' to display all entries. Type '-st' to display only to-dos. Type '-sn' to display only notes.")
+            print("To remove an entry, type '-x'. ")
 if __name__ == "__main__":
     main()
+
+    to_dos, notes, finished = summarizer.read_entries()
+    print(summarizer.langchain(to_dos, notes, finished))
