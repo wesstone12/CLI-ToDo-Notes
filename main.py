@@ -69,6 +69,63 @@ def display_entries(file_path="notes.txt", filter_type=None):
         entries = file.readlines()
 
     display_formatted_entries(entries, filter_type)
+def check_off_todo(file_path="notes.txt"):
+    # Load existing to-dos
+    to_dos = []
+    with open(file_path, "r") as file:
+        section = None
+        for line in file:
+            if "TO DO:" in line:
+                section = 'to_dos'
+            elif line.strip() and section == 'to_dos':
+                # Include only non-empty lines that are in the to-dos section
+                to_dos.append(line)
+
+    # Check if there are to-dos to display
+    if not to_dos:
+        print("No to-dos to display.")
+        return
+
+    # Display to-dos with an index
+    print("TO DOs:")
+    for index, todo in enumerate(to_dos, start=1):
+        print(f"{index}. {todo.strip()}")
+
+    # Prompt user to select a to-do to check off
+    try:
+        choice = int(input("Enter the number of the to-do to check off: ")) - 1
+        if 0 <= choice < len(to_dos):
+            # Remove the selected to-do
+            check_off = to_dos[choice]
+            del to_dos[choice]
+            # Update the file
+            update_todo_file(to_dos, file_path)
+            print(f"[{check_off[19:].strip()}] checked off successfully. Good job boss man")
+        else:
+            print("Invalid selection. Please enter a valid index number.")
+    except ValueError:
+        print("Please enter a number.")
+
+def update_todo_file(to_dos, file_path):
+    # Read the entire file and update the to-dos section
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+
+    with open(file_path, "w") as file:
+        in_todo_section = False
+        for line in lines:
+            if "TO DO:" in line:
+                in_todo_section = True
+                file.write(line)  # Write the "TO DO:" section marker
+                # Write the updated to-dos
+                for todo in to_dos:
+                    file.write(todo)
+            elif "NOTES:" in line:
+                in_todo_section = False
+                file.write("\n")  # Ensure separation between sections
+            if not in_todo_section or line.strip() == "":
+                file.write(line)
+
 
 def display_formatted_entries(entries, filter_type=None):
     is_printing = False  # Flag to control printing based on the filter_type
@@ -101,6 +158,7 @@ def main():
     print("Type '-e' or '-exit' to quit. Type '-c' or '-clear' to clear the screen.")
     print("Use 'note'/'-n' or 'todo'/'-t' followed by your text. No need for quotes around your text.")
     print("Type '-s' to display all entries. Type '-st' to display only to-dos. Type '-sn' to display only notes.")
+    print("To remove an entry, type '-x'. ")
     
     while True:
         user_input = input(">> ").strip().split(' ', 1)
@@ -120,8 +178,7 @@ def main():
         elif command in ['note', 'todo', "-n", "-t"] and len(user_input) > 1:
             content = user_input[1]
             add_entry(command, content)
-        else:
-            print("Invalid input. Please use 'note'/'-n' or 'todo'/'-t' followed by your text, or '-e'/'-exit' to exit. Use '-cls' or '-clear' to clear the screen. Type '-s', '-st', or '-sn' to display entries.")
-
+        elif command == '-x':
+            check_off_todo(file_path="notes.txt")
 if __name__ == "__main__":
     main()
