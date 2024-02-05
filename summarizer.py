@@ -31,7 +31,7 @@ def read_entries(file_path="notes.txt", filter_type=None):
                         finished.append(line.strip())
 
     # Debug print to check lists' content after reading
-    print(f"Notes: {notes}\nTo-Dos: {to_dos}\nFinished To-Dos: {finished}")
+    print(f"Notes: {notes}\nTo-Dos: {to_dos}\nFinished To-Dos: {finished}\n-------------------------\nGPT Summary:\n")
     return to_dos, notes, finished
 
 
