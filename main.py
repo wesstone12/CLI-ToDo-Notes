@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import summarizer
+from termcolor import colored
 
 def check_file(file_path="notes.txt"):
     if not os.path.exists(file_path):
@@ -58,7 +59,7 @@ def add_entry(entry_type, content, file_path="notes.txt"):
         file.write("FINISHED TO DOs:\n")
         file.writelines(finished_todos)
 
-    print(f"Entry added boss man: {new_entry.strip()}")
+    print(colored(f"Entry added boss man: {new_entry.strip()}",'green'))
 
 
 
@@ -106,6 +107,7 @@ def check_off_todo(file_path="notes.txt"):
                     file.write("NOTES:\n" + "".join(entries["notes"]))
                 file.write("\nTO DO:\n" + "".join(entries["to_dos"]))
                 file.write("\nFINISHED TO DOs:\n" + "".join(entries["finished_todos"]))
+            print(colored(f"Checked off: {finished_todo.strip()}",'light_red'))
     except ValueError:
         print("Please enter a number.")
 
@@ -143,7 +145,7 @@ def update_todo_file(file_path, to_dos=None, finished_todo=None):
             file.write("TO DO:\n" + "".join(to_dos) + "\n")
         file.write("FINISHED TO DOs:\n" + "".join(finished_todos))
 
-    print("File updated successfully.")
+    print(colored("File updated successfully.",'green'))
 
 
 def display_formatted_entries(entries, filter_type=None):
@@ -186,14 +188,24 @@ def display_formatted_entries(entries, filter_type=None):
 
 def main():
     check_file()
-    print("Note and To-Do List Manager")
-    print("Type '-e' or '-exit' to quit. Type '-c' or '-clear' to clear the screen.")
-    print("Use 'note'/'-n' or 'todo'/'-t' followed by your text. No need for quotes around your text.")
+    print(colored('''
+
+███╗   ██╗ ██████╗ ████████╗███████╗███████╗       ██╗       ████████╗ ██████╗       ██████╗  ██████╗ 
+████╗  ██║██╔═══██╗╚══██╔══╝██╔════╝██╔════╝       ██║       ╚══██╔══╝██╔═══██╗      ██╔══██╗██╔═══██╗
+██╔██╗ ██║██║   ██║   ██║   █████╗  ███████╗    ████████╗       ██║   ██║   ██║█████╗██║  ██║██║   ██║
+██║╚██╗██║██║   ██║   ██║   ██╔══╝  ╚════██║    ██╔═██╔═╝       ██║   ██║   ██║╚════╝██║  ██║██║   ██║
+██║ ╚████║╚██████╔╝   ██║   ███████╗███████║    ██████║         ██║   ╚██████╔╝      ██████╔╝╚██████╔╝
+╚═╝  ╚═══╝ ╚═════╝    ╚═╝   ╚══════╝╚══════╝    ╚═════╝         ╚═╝    ╚═════╝       ╚═════╝  ╚═════╝ 
+                                                                                                      
+  
+''',"white" ))
+    print("Type '-e' or '-exit' to quit. Type '-c' or '-clear' to clear the screen")
+    print("Use 'note'/'-n' or 'todo'/'-t' followed by your text")
     print("Type '-s' to display all entries. Type '-st' to display only to-dos. Type '-sn' to display only notes.")
     print("To remove an entry, type '-x'. ")
     
     while True:
-        user_input = input(">> ").strip().split(' ', 1)
+        user_input = input(colored(">> ", "dark_grey")).strip().split(' ', 1)
         command = user_input[0]
 
         if command in ['-e', '-exit']:

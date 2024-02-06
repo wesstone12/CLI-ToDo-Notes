@@ -36,7 +36,7 @@ def read_entries(file_path="notes.txt", filter_type=None):
 
 
 def langchain(to_dos, notes, finished):
-    chat = ChatOpenAI(temperature=.7, max_tokens=1000, model = 'gpt-4')
+    chat = ChatOpenAI(temperature=.7, max_tokens=1000)
     messages = [
     SystemMessage(
         content=f'''
